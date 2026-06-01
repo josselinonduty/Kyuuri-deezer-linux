@@ -26,6 +26,15 @@ jobs:
           sudo snap install lxd
           sudo lxd init --auto
           sudo usermod -a -G lxd $USER
+          sudo sysctl -w net.ipv4.conf.all.forwarding=1
+          if sudo iptables -nL DOCKER-USER >/dev/null 2>&1; then
+            sudo iptables -I DOCKER-USER -i lxdbr0 -j ACCEPT
+            sudo iptables -I DOCKER-USER -o lxdbr0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+          fi
+          if sudo ip6tables -nL DOCKER-USER >/dev/null 2>&1; then
+            sudo ip6tables -I DOCKER-USER -i lxdbr0 -j ACCEPT
+            sudo ip6tables -I DOCKER-USER -o lxdbr0 -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+          fi
 
       - name: install_deps
         run: make install_deps
