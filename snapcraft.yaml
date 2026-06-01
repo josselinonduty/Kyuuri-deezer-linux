@@ -1,12 +1,13 @@
 name: deezer-desktop
+title: Deezer Desktop
 base: core24
 adopt-info: deezer-linux-app
 platforms:
   amd64:
-    build-on: [amd64]
+    build-on: [amd64, arm64]
     build-for: [amd64]
   arm64:
-    build-on: [arm64]
+    build-on: [amd64, arm64]
     build-for: [arm64]
 summary: Online music streaming service
 description: |
@@ -14,6 +15,11 @@ description: |
     Access all of your favorite music, and save them offline for later!
 grade: stable
 confinement: strict
+license: Proprietary
+contact: https://github.com/aunetx/deezer-linux/issues
+issues: https://github.com/aunetx/deezer-linux/issues
+source-code: https://github.com/aunetx/deezer-linux
+website: https://github.com/aunetx/deezer-linux
 icon: dev.aunetx.deezer.svg
 
 apps:
@@ -30,6 +36,16 @@ apps:
       - screen-inhibit-control
       - home
       - removable-media
+      - browser-support
+      - opengl
+      - upower-observe
+      - alsa
+      - avahi-observe
+
+slots:
+  deezer-mpris:
+    interface: mpris
+    name: deezer
 
 plugs:
   shared-memory:
@@ -38,19 +54,16 @@ plugs:
 parts:
   deezer-linux-app:
     plugin: nil
-    build-packages: [wget, curl]
     override-build: |
       if [ "$CRAFT_ARCH_TRIPLET_BUILD_FOR" = "x86_64-linux-gnu" ]; then
-        URL=$(curl -s "https://api.github.com/repos/aunetx/deezer-linux/releases/latest" | grep -o 'https.*amd64\.deb' | head -1)
-        wget "$URL"
+        DEB_FILE=$(ls "$CRAFT_PROJECT_DIR"/artifacts/x64/*.deb | head -1)
       elif [ "$CRAFT_ARCH_TRIPLET_BUILD_FOR" = "aarch64-linux-gnu" ]; then
-        URL=$(curl -s "https://api.github.com/repos/aunetx/deezer-linux/releases/latest" | grep -o 'https.*arm64\.deb' | head -1)
-        wget "$URL"
+        DEB_FILE=$(ls "$CRAFT_PROJECT_DIR"/artifacts/arm64/*.deb | head -1)
       fi
 
-      DEB_FILE=$(basename "$URL")
       dpkg-deb -x "$DEB_FILE" "$CRAFT_PART_INSTALL"
-      VERSION=$(echo "$DEB_FILE" | cut -d'_' -f2)
+      chmod -R a+rX "$CRAFT_PART_INSTALL"
+      VERSION=$(echo "$(basename "$DEB_FILE")" | cut -d'_' -f2)
       craftctl set version="$VERSION"
     prime:
       - usr
